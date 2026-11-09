@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.taste-skill/
+test-results/
+playwright-report/
+blob-report/
+*.log
+.DS_Store
+supabase/.temp/
+supabase/.branches/
