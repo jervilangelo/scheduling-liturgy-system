@@ -6,7 +6,7 @@ import { workflowBar } from '../components/shared/workflow-bar';
 import { list, loadSchedulingContext } from '../services/api/store';
 import { serviceAsText, servicesAsText, scheduleWorkbook, type ScheduleData } from '../modules/exports/schedule';
 import { downloadXlsx } from '../modules/exports/xlsx';
-import { kindLabel } from '../modules/liturgy';
+import { isBullet, itemLine, monthDay, normalizeItems } from '../modules/liturgy';
 import { formatDateTime, formatLong, todayISO } from '../utils/dates';
 import type { Service } from '../types/domain';
 
@@ -59,10 +59,10 @@ async function renderPage(page: PageContext): Promise<void> {
             s.sermon.preacher ? h('p', { style: 'color:var(--muted)' }, s.sermon.preacher) : null,
           ) : null,
           h('h3', null, 'Order of worship'),
-          s.liturgy.length ? h('ol', null, s.liturgy.map((i) => {
-            const song = i.songId ? songById.get(i.songId) : undefined;
-            return h('li', null, h('span', { style: 'color:var(--muted)' }, `${kindLabel(i.kind)}: `), song?.title ?? (i.title || kindLabel(i.kind)), i.scripture ? ` — ${i.scripture}` : '', i.leader ? h('span', { style: 'color:var(--muted)' }, ` · ${i.leader}`) : null);
-          })) : h('p', { class: 'dash' }, 'No order of worship.'),
+          h('p', { style: 'font-weight:500;font-size:15px' }, monthDay(s.date)),
+          s.liturgy.length ? h('ul', { class: 'doc-static', style: 'margin-left:0' }, normalizeItems(s.liturgy, songById).map((i) =>
+            h('li', { class: isBullet(i) ? 'is-bullet' : '' }, isBullet(i) ? `– ${itemLine(i, songById).slice(2)}` : itemLine(i, songById)),
+          )) : h('p', { class: 'dash' }, 'No order of worship.'),
         ),
         h('section', null,
           h('h3', null, 'Ministry team'),

@@ -52,10 +52,126 @@ export interface DiffLine {
 }
 
 export function itemLine(i: LiturgyItem, songs: Map<string, Song>): string {
+  return formatLine(normalizeItems([i], songs)[0], songs);
+}
+
+/* ------------------------------------------------------------------
+ * Plain-text order of worship, in the church's own format:
+ *
+ *   November 8
+ *   Preparatory: God Rest Ye Merry Gentlemen
+ *   Call to Worship: Psalm 89:5
+ *   - Here Is Love
+ *   Prayer of Confession
+ *   Sermon: Nehemiah 9
+ *
+ *   Service Leader: Angelo
+ * ------------------------------------------------------------------ */
+
+/** True for a song line with no label ("- Here Is Love"). */
+export function isBullet(i: LiturgyItem): boolean {
+  return i.kind === 'song' && !i.title.trim();
+}
+
+/** Infers the element type from its label so rules (creed, communion…) still apply. */
+export function inferKind(label: string, bullet: boolean): LiturgyItemKind {
+  if (bullet) return 'song';
+  const l = label.toLowerCase();
+  if (/creed/.test(l)) return 'creed';
+  if (/communion|lord.?s supper/.test(l)) return 'communion';
+  if (/\bcpp\b/.test(l)) return 'cpp';
+  if (/sermon|message|preaching/.test(l)) return 'sermon';
+  if (/song|hymn|preparatory|prelude|postlude|response|doxology|special number/.test(l)) return 'song';
+  if (/call to worship/.test(l)) return 'call_to_worship';
+  if (/confession/.test(l)) return 'confession';
+  if (/prayer/.test(l)) return 'prayer';
+  if (/scripture|reading|psalm/.test(l)) return 'scripture';
+  if (/offering|tithe/.test(l)) return 'offering';
+  if (/announcement/.test(l)) return 'announcements';
+  if (/benediction|blessing/.test(l)) return 'benediction';
+  return 'custom';
+}
+
+function normalize(t: string): string {
+  return t.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+export function matchSong(text: string, songs: Song[]): Song | undefined {
+  const n = normalize(text);
+  return n ? songs.find((s) => normalize(s.title) === n) : undefined;
+}
+
+/** The text after the colon, falling back to older records' song or Scripture fields. */
+export function itemDetail(i: LiturgyItem, songs: Map<string, Song>): string {
+  if (i.detail !== undefined) return i.detail;
   const song = i.songId ? songs.get(i.songId) : undefined;
-  const title = song ? song.title : i.title || kindLabel(i.kind);
-  const extra = [i.scripture, i.leader ? `led by ${i.leader}` : ''].filter(Boolean).join(' · ');
-  return `${kindLabel(i.kind)}: ${title}${extra ? ` (${extra})` : ''}`;
+  return song?.title ?? i.scripture ?? '';
+}
+
+/** Brings older items into the label/detail shape (idempotent). */
+export function normalizeItems(items: LiturgyItem[], songs: Map<string, Song>): LiturgyItem[] {
+  return items.map((i) => {
+    if (i.detail !== undefined) return i;
+    if (i.kind === 'song') {
+      const song = i.songId ? songs.get(i.songId) : undefined;
+      return { ...i, title: '', detail: song?.title ?? i.title };
+    }
+    return { ...i, detail: i.scripture ?? '' };
+  });
+}
+
+/** One line in the church's format. */
+export function formatLine(i: LiturgyItem, songs: Map<string, Song>): string {
+  const detail = itemDetail(i, songs).trim();
+  if (isBullet(i)) return `- ${detail}`;
+  const label = i.title.trim() || kindLabel(i.kind);
+  return detail ? `${label}: ${detail}` : label;
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "November 8" */
+export function monthDay(date: string): string {
+  return `${MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}`;
+}
+
+export function liturgyToText(date: string, items: LiturgyItem[], songs: Map<string, Song>, team: { role: string; names: string[] }[] = []): string {
+  const lines = [monthDay(date), ...items.map((i) => formatLine(i, songs))];
+  if (team.length) lines.push('', ...team.map((t) => `${t.role}: ${t.names.join(', ')}`.trimEnd()));
+  return lines.join('\n');
+}
+
+const DATE_LINE = /^((sun|mon|tue|wed|thu|fri|sat)[a-z]*,?\s+)?((jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(,?\s+\d{4})?|\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(\s+\d{4})?|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}(\/\d{2,4})?)$/i;
+
+/**
+ * Parses the church's text format into items. A leading date line is skipped,
+ * as are team lines whose label is a ministry role ("Service Leader: Angelo").
+ */
+export function parseLiturgyText(text: string, songs: Song[], roleNames: string[], makeId: () => string): { items: LiturgyItem[]; skipped: string[] } {
+  const roles = new Set(roleNames.map((r) => r.trim().toLowerCase()));
+  const items: LiturgyItem[] = [];
+  const skipped: string[] = [];
+  let first = true;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (first && DATE_LINE.test(line)) { first = false; continue; }
+    first = false;
+    const bullet = line.match(/^[-–—•*·]\s*(.*)$/);
+    if (bullet) {
+      const detail = bullet[1].trim();
+      items.push({ id: makeId(), kind: 'song', title: '', detail, songId: matchSong(detail, songs)?.id ?? null });
+      continue;
+    }
+    // Split on the first colon followed by a space or the line end, so "Psalm 89:5" keeps its colon.
+    const idx = line.search(/:(\s|$)/);
+    const label = (idx >= 0 ? line.slice(0, idx) : line).trim();
+    const detail = idx >= 0 ? line.slice(idx + 1).trim() : '';
+    if (roles.has(label.toLowerCase())) { skipped.push(line); continue; }
+    const kind = inferKind(label, false);
+    items.push({ id: makeId(), kind, title: label, detail, songId: kind === 'song' ? matchSong(detail, songs)?.id ?? null : null });
+  }
+  return { items, skipped };
 }
 
 export function diffLines(a: string[], b: string[]): DiffLine[] {

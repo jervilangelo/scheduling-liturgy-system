@@ -92,7 +92,7 @@ export function checkLiturgy(items: LiturgyItem[], info: SundayInfo, settings: A
     if (!present) {
       const label = k === 'creed' && info.creed ? CREED_NAMES[info.creed] : specialLabel(k, settings);
       issues.push({ kind: k, message: `${label} is required on this Sunday but is not in the order of worship.` });
-    } else if (k === 'creed' && info.creed && !present.title.toLowerCase().includes(info.creed === 'nicene' ? 'nicene' : 'apostles')) {
+    } else if (k === 'creed' && info.creed && !`${present.title} ${present.detail ?? ''}`.toLowerCase().includes(info.creed === 'nicene' ? 'nicene' : 'apostles')) {
       issues.push({ kind: k, message: `This month uses the ${CREED_NAMES[info.creed]}; the creed item says "${present.title}".` });
     }
   }
@@ -114,12 +114,12 @@ export function applySundayRules(items: LiturgyItem[], info: SundayInfo, setting
     const existing = out.find((i) => i.kind === kind);
     if (k === 'creed' && info.creed) {
       const title = CREED_NAMES[info.creed];
-      if (existing) existing.title = title;
-      else out.splice(sermonIdx(), 0, { id: makeId(), kind, title, durationMin: 3 });
+      if (existing) { existing.title = title; existing.detail = ''; }
+      else out.splice(sermonIdx(), 0, { id: makeId(), kind, title, detail: '', durationMin: 3 });
       continue;
     }
     if (existing) continue;
-    const item: LiturgyItem = { id: makeId(), kind, title: specialLabel(k, settings), durationMin: k === 'communion' ? 15 : 10 };
+    const item: LiturgyItem = { id: makeId(), kind, title: specialLabel(k, settings), detail: '', durationMin: k === 'communion' ? 15 : 10 };
     if (k === 'communion') {
       const idx = sermonIdx();
       out.splice(Math.min(idx + 1, out.length), 0, item);

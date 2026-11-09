@@ -83,7 +83,8 @@ The comprehensive ECCM master prompt referred to in the instructions was not ava
 
 - **CPP** is shown as a configurable label; the abbreviation is not expanded anywhere.
 - **Creed rotation anchor:** January 2026 uses the Nicene Creed, changeable in Settings.
-- **Default worship roles and counts:** worship leader 1, vocals 2, keyboard, guitar, bass, drums, Scripture reader, prayer leader, sound, slides, ushers 2. All are editable in Settings.
+- **Default team roles** follow the foot of the church's plan: Service Leader, Scripture Reader and Music, one person each. Add more roles, or change the counts, in Settings.
+- **Order of worship format:** every line is "Label: detail", and songs without a label are dash lines. This matches the church's weekly plan, which the Text view on the Liturgy page reads and writes. The element type is inferred from the label (for example "Response Song" is a song and "Nicene Creed" is the creed), so the special-Sunday rules still apply.
 - **Service time** is 09:00–11:00.
 - **SongList headers** are assumed to be `Title`, `Last Sung`, `Theme` and `Artist`. All are configurable.
 - **Last Sung** moves forward only when a service is **published** and its date has passed, and is never moved backwards.

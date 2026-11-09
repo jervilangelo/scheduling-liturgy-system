@@ -422,3 +422,70 @@
   .sheet-doc + .sheet-doc { margin-top: 0; }
   a { text-decoration: none; }
 }
+
+/* ---------- Liturgy document (reads like the printed order of worship) ---------- */
+@layer components {
+  .svc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 10px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+  .doc { padding: 20px 24px 8px 12px; }
+  .doc-date { font-size: 20px; font-weight: 500; margin: 0 0 10px 30px; }
+  .doc-lines { list-style: none; margin: 0; padding: 0; }
+  .doc-line { display: flex; align-items: center; gap: 2px; min-height: 40px; padding: 1px 4px 1px 0; border-radius: 6px; font-size: 15px; }
+  .doc-line:hover, .doc-line:focus-within { background: #f8f7f5; }
+  .doc-line.is-dragging { opacity: 0.4; }
+  .doc-line.drop-before { box-shadow: inset 0 2px 0 var(--data); }
+  .doc-line.is-bullet { padding-left: 22px; }
+  .line-handle { display: grid; place-items: center; width: 26px; height: 32px; color: var(--muted); cursor: grab; opacity: 0; flex: none; }
+  .line-bullet { width: 16px; text-align: center; color: var(--text); flex: none; }
+  .line-input {
+    font: inherit; color: var(--text); background: transparent; border: 1px solid transparent;
+    border-radius: 6px; height: 34px; padding: 0 6px; min-width: 0;
+  }
+  .line-input:hover { border-color: var(--border); }
+  .line-input:focus { outline: none; border-color: var(--data); background: #fff; }
+  .line-label { flex: none; max-width: 60%; padding-right: 0; }
+  .line-sep { margin: 0 2px 0 -3px; color: var(--text); flex: none; }
+  .line-detail { flex: 1 1 140px; }
+  .doc-line:not(.has-detail):not(:focus-within) .line-sep { visibility: hidden; }
+  .doc-line:not(:hover):not(:focus-within) .line-detail::placeholder { color: transparent; }
+  .doc-line.is-bullet:not(.has-detail) .line-detail::placeholder { color: var(--muted); }
+  .line-meta-wrap { display: inline-flex; gap: 6px; align-items: center; flex: none; }
+  .line-meta { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .line-meta.is-warn { color: var(--warning); }
+  .line-tools { display: inline-flex; opacity: 0; flex: none; }
+  .doc-line:hover .line-tools, .doc-line:focus-within .line-tools, .doc-line:hover .line-handle, .doc-line:focus-within .line-handle { opacity: 1; }
+  .doc-add { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 8px 0 4px 26px; }
+  .doc-team { margin: 20px 0 8px 30px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 15px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+  .doc-team-role { font-weight: 500; }
+  .doc-static { list-style: none; margin: 0 0 0 30px; padding: 0; font-size: 15px; }
+  .doc-static li { padding: 5px 0; }
+  .doc-static li.is-bullet { padding-left: 22px; }
+  .doc-text { display: block; width: 100%; min-height: 460px; padding: 14px 16px; font: inherit; font-size: 15px; line-height: 1.75; color: var(--text); border: 1px solid var(--control); border-radius: var(--radius-control); resize: vertical; }
+  .doc-text:focus { outline: 2px solid var(--data); outline-offset: -1px; }
+  .doc-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--rule); }
+  .save-note { color: var(--muted); font-size: 13px; margin-right: auto; }
+  @media (pointer: coarse) { .line-tools, .line-handle { opacity: 1; } }
+  @media (max-width: 640px) {
+    .doc { padding: 16px 8px 8px 0; }
+    .doc-line { flex-wrap: wrap; }
+    .line-handle { display: none; }
+    .doc-line.is-bullet { padding-left: 8px; }
+    .doc-date, .doc-static, .doc-team { margin-left: 8px; }
+    .line-label { max-width: 100%; }
+    .line-tools { margin-left: auto; }
+  }
+}
+@layer components {
+  /* Song notes stay out of the way until a line is hovered or edited. */
+  .doc-line:not(:hover):not(:focus-within) .line-meta { visibility: hidden; }
+  @media (pointer: coarse) { .doc-line .line-meta { visibility: visible; } }
+}
+@layer components {
+  @media (max-width: 640px) {
+    /* On phones the tools and notes appear only for the line being edited. */
+    .doc-line .line-tools, .doc-line .line-meta-wrap { display: none; }
+    .doc-line:focus-within .line-tools, .doc-line:focus-within .line-meta-wrap { display: inline-flex; }
+    .doc-line { flex-wrap: nowrap; }
+    .doc-line:focus-within { flex-wrap: wrap; }
+    .line-label { max-width: 64%; }
+  }
+}

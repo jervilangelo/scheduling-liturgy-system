@@ -121,10 +121,18 @@ export type LiturgyItemKind =
   | 'benediction'
   | 'custom';
 
+/**
+ * One line of the order of worship, written as "Label: detail"
+ * (e.g. "Call to Worship: Psalm 89:5"). A song with no label is a dash line
+ * ("- Here Is Love"). `kind` is inferred from the label for rules and exports.
+ */
 export interface LiturgyItem {
   id: string;
   kind: LiturgyItemKind;
+  /** The label, e.g. "Call to Worship". Empty for a plain song line. */
   title: string;
+  /** Text after the colon: a song title, Scripture passage or other detail. */
+  detail?: string;
   songId?: string | null;
   scripture?: string;
   leader?: string;

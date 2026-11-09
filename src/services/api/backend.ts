@@ -80,7 +80,8 @@ class SupabaseBackend implements DataBackend {
 
 /* ---------- Local (demo) backend: browser storage ---------- */
 
-export const LOCAL_PREFIX = 'eccm:v1:';
+// v2: liturgy lines are label + detail, and the team matches the church's format.
+export const LOCAL_PREFIX = 'eccm:v2:';
 
 function safeGet(key: string): string | null {
   try { return localStorage.getItem(key); } catch { return null; }

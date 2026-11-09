@@ -1,38 +1,86 @@
 import { expect, test } from '@playwright/test';
 import { login, sundays } from './helpers';
 
+// The church's own weekly plan, as written.
+const SAMPLE = [
+  'November 8',
+  'Preparatory: God Rest Ye Merry Gentlemen',
+  'Call to Worship: Psalm 89:5',
+  '-\tMagnificent, Marvelous, Matchless Love',
+  '-\tHere Is Love',
+  'Scripture Reading: Romans 5',
+  'Prayer of Confession',
+  '-\tWhen I Survey The Wondrous Cross',
+  'Congregational Reading of Scripture: Matthew 5:38-47',
+  'Prayer of Thanksgiving',
+  '-\tBeautiful Savior',
+  'Pastoral Prayer',
+  '-\tCome Thou Fount',
+  'Sermon: Nehemiah 9',
+  'Response Song: The Lord is my Salvation',
+  '',
+  'Service Leader: Angelo',
+  'Scripture Reader: ',
+  'Music:',
+].join('\n');
+
 test.describe('liturgy planning', () => {
-  test('starts a plan from a template, adds special elements, reorders, saves a version', async ({ page }) => {
+  test('writes the order of worship as lines, like the printed plan', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     const { firstOfNextMonth } = sundays();
     await login(page, 'planner');
     await page.goto(`liturgy.html?date=${firstOfNextMonth}`);
-    await expect(page.getByTestId('service-date')).toContainText('Sunday worship');
     await expect(page.locator('.pill', { hasText: 'Holy Communion' }).first()).toBeVisible();
 
-    await page.getByRole('button', { name: 'Standard Sunday' }).first().click();
+    await page.getByRole('button', { name: /Use .Standard Sunday./ }).click();
     const order = page.getByTestId('order');
     await expect(order.locator('li[data-kind="communion"]')).toHaveCount(1);
+    await expect(page.getByLabel('Line 1', { exact: true })).toHaveValue('Preparatory');
 
-    // Reorder with the keyboard-accessible buttons
-    const firstTitle = await order.locator('li').nth(0).locator('select').inputValue();
-    await page.getByRole('button', { name: 'Move element 1 down' }).click();
-    expect(await order.locator('li').nth(1).locator('select').inputValue()).toBe(firstTitle);
+    // Type a song on the first dash line; Enter starts a new song line below
+    await page.getByLabel('Line 3 song').fill('Here Is Love');
+    await page.getByLabel('Line 3 song').press('Enter');
+    await expect(page.getByLabel('Line 4 song')).toBeFocused();
+    await page.keyboard.type('Come Thou Fount');
+    // Backspace on an empty line removes it
+    await page.getByLabel('Line 4 song').press('Enter');
+    const before = await order.locator('li').count();
+    await page.keyboard.press('Backspace');
+    await expect(order.locator('li')).toHaveCount(before - 1);
 
-    // Choose a song by searching
-    await order.getByRole('button', { name: /song: none chosen/ }).first().click();
-    await page.getByRole('searchbox', { name: 'Search songs' }).fill('fortress');
-    await page.getByRole('row', { name: /A Mighty Fortress/ }).getByRole('button', { name: 'Choose' }).click();
-    await expect(order).toContainText('A Mighty Fortress Is Our God');
+    // The text view shows the church's format
+    await page.getByRole('button', { name: 'Text', exact: true }).click();
+    const text = page.getByRole('textbox', { name: 'Order of worship as text' });
+    await expect(text).toHaveValue(/- Here Is Love\n- Come Thou Fount/);
 
-    await page.getByLabel('Sermon title').fill('Bread of life');
-    await page.getByLabel('Version note').fill('First draft');
+    // Paste a whole plan in that format
+    await text.fill(SAMPLE);
+    await expect(page.getByText(/Team lines .* are set in the Team section/)).toBeVisible();
+    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await expect(order.locator('li')).toHaveCount(14);
+    await expect(page.getByLabel('Line 2 Call to Worship')).toHaveValue('Psalm 89:5');
+    // This Sunday needs Communion; the pasted plan has none
+    await page.getByRole('button', { name: 'Add it' }).click();
+    await expect(order.locator('li[data-kind="communion"]')).toHaveCount(1);
+
+    await page.getByLabel('Version note').fill('Pasted plan');
     await page.getByTestId('save-liturgy').click();
     await expect(page.getByTestId('versions')).toContainText('Version 1 (current)');
-    await expect(page.getByTestId('versions')).toContainText('First draft');
 
-    // Persisted across a reload (another page load)
     await page.reload();
-    await expect(page.getByLabel('Sermon title')).toHaveValue('Bread of life');
+    await expect(page.getByLabel(/^Line \d+ Sermon$/)).toHaveValue('Nehemiah 9');
+
+    // Copy gives the church's own text format (captured as written, independent of the OS clipboard)
+    await page.evaluate(() => {
+      const w = window as unknown as { __copied: string };
+      w.__copied = '';
+      navigator.clipboard.writeText = async (t: string) => { w.__copied = t; };
+    });
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByText('Copied in your church')).toBeVisible();
+    const copied = await page.evaluate(() => (window as unknown as { __copied: string }).__copied);
+    expect(copied.split('\n').slice(1, 4)).toEqual(['Preparatory: God Rest Ye Merry Gentlemen', 'Call to Worship: Psalm 89:5', '- Magnificent, Marvelous, Matchless Love']);
+    expect(copied).toMatch(/\n\nService Leader:.*\nScripture Reader:.*\nMusic:/);
   });
 
   test('viewers see plans read-only', async ({ page }) => {
@@ -40,6 +88,7 @@ test.describe('liturgy planning', () => {
     await page.goto('liturgy.html');
     await expect(page.getByText('Editing needs the planner role')).toBeVisible();
     await expect(page.getByTestId('save-liturgy')).toHaveCount(0);
+    await expect(page.getByTestId('order')).toContainText('Sermon:');
   });
 });
 
@@ -48,10 +97,10 @@ test.describe('scheduling', () => {
     const { following } = sundays();
     await login(page, 'planner');
     await page.goto(`scheduling.html?date=${following}`);
-    // Seed marks Mark Dela Rosa (keyboard) unavailable on this Sunday
-    await page.getByTestId('assign-role-keys').click();
+    // Seed marks Mark Dela Rosa (Music) unavailable on this Sunday
+    await page.getByTestId('assign-role-music').click();
     const cands = page.getByTestId('candidates');
-    await expect(cands.locator('.cand').first()).toContainText('Bea Mendoza');
+    await expect(cands.locator('.cand').first()).toContainText('Next in rotation');
     await expect(cands.locator('.cand', { hasText: 'Mark Dela Rosa' })).toContainText('unavailable');
 
     await cands.locator('.cand', { hasText: 'Mark Dela Rosa' }).getByRole('button', { name: 'Assign anyway' }).click();
@@ -60,7 +109,7 @@ test.describe('scheduling', () => {
     await page.getByLabel('Reason for the override').fill('Back early, confirmed by phone');
     await page.getByRole('button', { name: 'Override', exact: true }).click();
 
-    const slot = page.locator('[data-role="role-keys"] [data-testid="slot"]');
+    const slot = page.locator('[data-role="role-music"] [data-testid="slot"]');
     await expect(slot).toContainText('Mark Dela Rosa');
     await expect(slot).toContainText('Override');
     await expect(page.getByTestId('conflicts')).toContainText('Overridden: Back early');
@@ -74,7 +123,7 @@ test.describe('scheduling', () => {
     await page.getByRole('button', { name: 'Assign all' }).click();
     await expect(page.getByText(/roles filled by rotation/)).toBeVisible();
     await expect(page.locator('.slot.has-error')).toHaveCount(0);
-    await expect(page.getByText('13 of 13 roles filled')).toBeVisible();
+    await expect(page.getByText('3 of 3 roles filled')).toBeVisible();
   });
 });
 
@@ -85,16 +134,20 @@ test.describe('review and publishing', () => {
     await page.goto(`liturgy.html?date=${next}`);
     const wf = page.getByTestId('workflow');
     await wf.getByRole('button', { name: 'Approve' }).click();
+    // Approving with open issues (e.g. an empty team role) asks for confirmation
+    const confirm = page.getByRole('dialog').getByRole('button', { name: 'Approve' });
+    if (await confirm.isVisible().catch(() => false)) await confirm.click();
     await expect(wf.getByText('Approved')).toBeVisible();
     await wf.getByRole('button', { name: 'Publish' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Publish' }).click();
     await expect(wf.getByText('Published')).toBeVisible();
-    await expect(page.getByText('published and read-only')).toBeVisible();
+    await expect(page.getByText('Published and read-only')).toBeVisible();
 
     await page.goto(`published.html?date=${next}`);
     const doc = page.getByTestId('published-service');
     await expect(doc).toHaveCount(1);
     await expect(doc).toContainText('Order of worship');
+    await expect(doc).toContainText('Sermon:');
     const download = page.waitForEvent('download');
     await doc.getByRole('button', { name: 'Excel' }).click();
     expect((await download).suggestedFilename()).toBe(`eccm-${next}.xlsx`);
@@ -122,10 +175,10 @@ test.describe('directory, songs, settings', () => {
     await expect(page.getByText('Enter a name.')).toBeVisible();
     await page.getByLabel('Full name').fill('Joel Rivera');
     await page.getByLabel('Email').fill('joel@example.org');
-    await page.getByRole('dialog').getByLabel('Drums').check();
+    await page.getByRole('dialog').getByLabel('Music').check();
     await page.getByRole('button', { name: 'Add volunteer' }).last().click();
     const row = page.getByTestId('volunteer-table').getByRole('row', { name: /Joel Rivera/ });
-    await expect(row).toContainText('Drums');
+    await expect(row).toContainText('Music');
     await row.getByRole('button', { name: 'Details' }).click();
     await page.getByLabel('Unavailable date').fill('2031-01-05');
     await page.getByRole('button', { name: 'Mark unavailable' }).click();
@@ -150,7 +203,7 @@ test.describe('directory, songs, settings', () => {
     const before = await preview.textContent();
     await page.getByLabel('Creed in that month').selectOption('apostles');
     expect(await preview.textContent()).not.toBe(before);
-    await expect(page.getByTestId('roles-worship')).toContainText('Worship leader');
+    await expect(page.getByTestId('roles-worship')).toContainText('Service Leader');
     await expect(page.getByTestId('permissions')).toBeVisible();
   });
 

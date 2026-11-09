@@ -101,12 +101,13 @@ describe('exports', () => {
     expect(sheet).toContain('<v>3</v>');
     expect(strFromU8(files['xl/workbook.xml'])).toContain('name="A B"');
   });
-  it('formats a service as text with specials, order and team', () => {
+  it('formats a service as text in the church format, with the team at the foot', () => {
     const first = seed.services.find((s) => s.date === '2026-11-01')!;
-    const txt = serviceAsText(data, first);
-    expect(txt).toContain('Special: Holy Communion');
-    expect(txt).toContain('Order of worship');
-    expect(txt).toMatch(/Worship leader: \S+/);
+    const txt = serviceAsText(data, first).split('\n');
+    expect(txt[0]).toBe('November 1');
+    expect(txt).toContain('Holy Communion');
+    expect(txt.some((l) => l.startsWith('- '))).toBe(true);
+    expect(txt.at(-3)).toMatch(/^Service Leader: \S+/);
   });
   it('builds a roster sheet plus one sheet per service', () => {
     const pub = seed.services.filter((s) => s.status === 'published');

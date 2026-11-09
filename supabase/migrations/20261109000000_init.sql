@@ -324,30 +324,26 @@ insert into public.ministries (id, slug, name, description, default_start, defau
 values ('min-worship', 'worship', 'Sunday worship', 'Main Sunday worship service', '09:00', '11:00', true);
 
 insert into public.role_definitions (id, ministry_id, name, min_count, sort_order, compatible_role_ids) values
-  ('role-leader', 'min-worship', 'Worship leader', 1, 0, '{role-vocals,role-guitar}'),
-  ('role-vocals', 'min-worship', 'Vocals', 2, 1, '{}'),
-  ('role-keys', 'min-worship', 'Keyboard', 1, 2, '{}'),
-  ('role-guitar', 'min-worship', 'Guitar', 1, 3, '{}'),
-  ('role-bass', 'min-worship', 'Bass', 1, 4, '{}'),
-  ('role-drums', 'min-worship', 'Drums', 1, 5, '{}'),
-  ('role-reader', 'min-worship', 'Scripture reader', 1, 6, '{}'),
-  ('role-prayer', 'min-worship', 'Prayer leader', 1, 7, '{}'),
-  ('role-sound', 'min-worship', 'Sound', 1, 8, '{}'),
-  ('role-slides', 'min-worship', 'Slides', 1, 9, '{}'),
-  ('role-usher', 'min-worship', 'Ushers', 2, 10, '{}');
+  ('role-leader', 'min-worship', 'Service Leader', 1, 0, '{role-music}'),
+  ('role-reader', 'min-worship', 'Scripture Reader', 1, 1, '{}'),
+  ('role-music', 'min-worship', 'Music', 1, 2, '{}');
 
+-- The church's standard order of worship. Each line is "title: detail";
+-- a song line with an empty title is written "- Song".
 insert into public.liturgy_templates (id, name, description, items) values
   ('tpl-standard', 'Standard Sunday', 'Regular order of worship', '[
-    {"id":"t1","kind":"call_to_worship","title":"Call to worship","durationMin":3},
-    {"id":"t2","kind":"song","title":"","durationMin":5},
-    {"id":"t3","kind":"song","title":"","durationMin":5},
-    {"id":"t4","kind":"prayer","title":"Prayer of adoration","durationMin":4},
-    {"id":"t5","kind":"confession","title":"Confession and assurance","durationMin":4},
-    {"id":"t6","kind":"song","title":"","durationMin":5},
-    {"id":"t7","kind":"scripture","title":"Scripture reading","durationMin":4},
-    {"id":"t8","kind":"announcements","title":"Announcements","durationMin":4},
-    {"id":"t9","kind":"offering","title":"Offering","durationMin":5},
-    {"id":"t10","kind":"sermon","title":"Sermon","durationMin":35},
-    {"id":"t11","kind":"song","title":"","durationMin":5},
-    {"id":"t12","kind":"benediction","title":"Benediction","durationMin":2}
+    {"id":"t1","kind":"song","title":"Preparatory","detail":""},
+    {"id":"t2","kind":"call_to_worship","title":"Call to Worship","detail":""},
+    {"id":"t3","kind":"song","title":"","detail":""},
+    {"id":"t4","kind":"song","title":"","detail":""},
+    {"id":"t5","kind":"scripture","title":"Scripture Reading","detail":""},
+    {"id":"t6","kind":"confession","title":"Prayer of Confession","detail":""},
+    {"id":"t7","kind":"song","title":"","detail":""},
+    {"id":"t8","kind":"scripture","title":"Congregational Reading of Scripture","detail":""},
+    {"id":"t9","kind":"prayer","title":"Prayer of Thanksgiving","detail":""},
+    {"id":"t10","kind":"song","title":"","detail":""},
+    {"id":"t11","kind":"prayer","title":"Pastoral Prayer","detail":""},
+    {"id":"t12","kind":"song","title":"","detail":""},
+    {"id":"t13","kind":"sermon","title":"Sermon","detail":""},
+    {"id":"t14","kind":"song","title":"Response Song","detail":""}
   ]'::jsonb);

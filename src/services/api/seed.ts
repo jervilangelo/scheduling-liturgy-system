@@ -45,43 +45,26 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const WORSHIP = 'min-worship';
 
+/** The team lines at the foot of the church's order of worship. */
 const ROLE_DEFS: [string, string, number][] = [
-  ['role-leader', 'Worship leader', 1],
-  ['role-vocals', 'Vocals', 2],
-  ['role-keys', 'Keyboard', 1],
-  ['role-guitar', 'Guitar', 1],
-  ['role-bass', 'Bass', 1],
-  ['role-drums', 'Drums', 1],
-  ['role-reader', 'Scripture reader', 1],
-  ['role-prayer', 'Prayer leader', 1],
-  ['role-sound', 'Sound', 1],
-  ['role-slides', 'Slides', 1],
-  ['role-usher', 'Ushers', 2],
+  ['role-leader', 'Service Leader', 1],
+  ['role-reader', 'Scripture Reader', 1],
+  ['role-music', 'Music', 1],
 ];
 
 const PEOPLE: [string, string[]][] = [
-  ['Maria Santos', ['role-leader', 'role-vocals']],
-  ['Paolo Reyes', ['role-leader', 'role-guitar', 'role-vocals']],
-  ['Grace Villanueva', ['role-vocals', 'role-reader']],
-  ['Joanna Cruz', ['role-vocals', 'role-prayer']],
-  ['Mark Dela Rosa', ['role-keys']],
-  ['Bea Mendoza', ['role-keys', 'role-vocals']],
-  ['Carlo Bautista', ['role-guitar']],
-  ['Nico Aquino', ['role-bass', 'role-guitar']],
-  ['Rafael Garcia', ['role-bass']],
-  ['Daniel Torres', ['role-drums']],
-  ['Miguel Ramos', ['role-drums', 'role-sound']],
-  ['Ana Fernandez', ['role-reader', 'role-prayer']],
-  ['Ruth Castillo', ['role-reader', 'role-usher']],
-  ['Samuel Navarro', ['role-prayer', 'role-reader']],
-  ['Josh Pascual', ['role-sound', 'role-slides']],
-  ['Ella Domingo', ['role-slides']],
-  ['Kevin Lim', ['role-sound']],
-  ['Teresa Gonzales', ['role-usher']],
-  ['Victor Salazar', ['role-usher']],
-  ['Lorna Ocampo', ['role-usher', 'role-prayer']],
-  ['Isaac Manalo', ['role-slides', 'role-usher']],
-  ['Hannah Tan', ['role-vocals']],
+  ['Angelo Reyes', ['role-leader', 'role-music']],
+  ['Maria Santos', ['role-leader', 'role-music']],
+  ['Samuel Navarro', ['role-leader', 'role-reader']],
+  ['Ana Fernandez', ['role-reader']],
+  ['Grace Villanueva', ['role-reader', 'role-music']],
+  ['Ruth Castillo', ['role-reader']],
+  ['Lorna Ocampo', ['role-reader']],
+  ['Isaac Manalo', ['role-reader']],
+  ['Mark Dela Rosa', ['role-music']],
+  ['Bea Mendoza', ['role-music']],
+  ['Paolo Cruz', ['role-music']],
+  ['Hannah Tan', ['role-music']],
 ];
 
 const SONGS: [string, string, string[]][] = [
@@ -91,44 +74,70 @@ const SONGS: [string, string, string[]][] = [
   ['It Is Well with My Soul', 'Horatio Spafford', ['Peace', 'Trust']],
   ['How Great Thou Art', 'Carl Boberg', ['Creation', 'Praise']],
   ['Be Thou My Vision', 'Traditional Irish', ['Devotion']],
-  ['Come, Thou Fount of Every Blessing', 'Robert Robinson', ['Grace', 'Devotion']],
-  ['When I Survey the Wondrous Cross', 'Isaac Watts', ['Cross', 'Communion']],
+  ['Come Thou Fount', 'Robert Robinson', ['Grace', 'Devotion']],
+  ['When I Survey The Wondrous Cross', 'Isaac Watts', ['Cross', 'Communion']],
   ['Crown Him with Many Crowns', 'Matthew Bridges', ['Kingship', 'Praise']],
   ['A Mighty Fortress Is Our God', 'Martin Luther', ['Refuge', 'Trust']],
-  ['Christ the Lord Is Risen Today', 'Charles Wesley', ['Resurrection']],
+  ['Here Is Love', 'William Rees', ['Love', 'Cross']],
+  ['Magnificent, Marvelous, Matchless Love', 'Haldor Lillenas', ['Love', 'Grace']],
+  ['Beautiful Savior', 'Traditional', ['Praise']],
+  ['The Lord is my Salvation', 'Keith & Kristyn Getty', ['Salvation']],
   ['Rock of Ages', 'Augustus Toplady', ['Salvation', 'Refuge']],
   ['Blessed Assurance', 'Fanny Crosby', ['Assurance']],
   ['And Can It Be', 'Charles Wesley', ['Grace', 'Salvation']],
   ['There Is a Fountain', 'William Cowper', ['Cross', 'Communion']],
-  ['Joyful, Joyful, We Adore Thee', 'Henry van Dyke', ['Praise', 'Joy']],
-  ['Praise to the Lord, the Almighty', 'Joachim Neander', ['Praise']],
-  ['The Church’s One Foundation', 'Samuel Stone', ['Church']],
-  ['O Worship the King', 'Robert Grant', ['Praise', 'Kingship']],
   ['Jesus Paid It All', 'Elvina Hall', ['Cross', 'Grace']],
-  ['Come Thou Long Expected Jesus', 'Charles Wesley', ['Advent']],
+  ['God Rest Ye Merry Gentlemen', 'Traditional', ['Christmas']],
   ['O Come, All Ye Faithful', 'John Francis Wade', ['Christmas']],
   ['Joy to the World', 'Isaac Watts', ['Christmas', 'Joy']],
   ['Doxology', 'Thomas Ken', ['Praise', 'Benediction']],
 ];
 
+/** The church's standard order of worship, as written in its weekly plan. */
 function templateItems(): LiturgyItem[] {
-  const t = (kind: LiturgyItem['kind'], title: string, durationMin: number, extra: Partial<LiturgyItem> = {}): LiturgyItem => ({
-    id: uid(), kind, title, durationMin, ...extra,
-  });
+  const line = (title: string, kind: LiturgyItem['kind']): LiturgyItem => ({ id: uid(), kind, title, detail: '' });
+  const song = (): LiturgyItem => ({ id: uid(), kind: 'song', title: '', detail: '' });
   return [
-    t('call_to_worship', 'Call to worship', 3, { scripture: 'Psalm 95:1-7' }),
-    t('song', '', 5),
-    t('song', '', 5),
-    t('prayer', 'Prayer of adoration', 4),
-    t('confession', 'Confession and assurance', 4),
-    t('song', '', 5),
-    t('scripture', 'Scripture reading', 4),
-    t('announcements', 'Announcements', 4),
-    t('offering', 'Offering', 5),
-    t('sermon', 'Sermon', 35),
-    t('song', '', 5),
-    t('benediction', 'Benediction', 2),
+    line('Preparatory', 'song'),
+    line('Call to Worship', 'call_to_worship'),
+    song(),
+    song(),
+    line('Scripture Reading', 'scripture'),
+    line('Prayer of Confession', 'confession'),
+    song(),
+    line('Congregational Reading of Scripture', 'scripture'),
+    line('Prayer of Thanksgiving', 'prayer'),
+    song(),
+    line('Pastoral Prayer', 'prayer'),
+    song(),
+    line('Sermon', 'sermon'),
+    line('Response Song', 'song'),
   ];
+}
+
+/** Sample filled plans, one per seeded Sunday. */
+const PLANS: { songs: string[]; call: string; reading: string; congregational: string; sermon: string; title: string; preacher: string }[] = [
+  { songs: ['Crown Him with Many Crowns', 'Holy, Holy, Holy', 'Great Is Thy Faithfulness', 'Rock of Ages', 'Be Thou My Vision', 'How Great Thou Art', 'Blessed Assurance'], call: 'Psalm 95:1-7', reading: 'Genesis 16', congregational: 'Psalm 139:1-12', sermon: 'Genesis 16:7-14', title: 'The God who sees', preacher: 'Ptr. Daniel Reyes' },
+  { songs: ['God Rest Ye Merry Gentlemen', 'Magnificent, Marvelous, Matchless Love', 'Here Is Love', 'When I Survey The Wondrous Cross', 'Beautiful Savior', 'Come Thou Fount', 'The Lord is my Salvation'], call: 'Psalm 89:5', reading: 'Romans 5', congregational: 'Matthew 5:38-47', sermon: 'Nehemiah 9', title: 'The God who keeps covenant', preacher: 'Ptr. Daniel Reyes' },
+  { songs: ['A Mighty Fortress Is Our God', 'It Is Well with My Soul', 'Amazing Grace', 'Jesus Paid It All', 'And Can It Be', 'There Is a Fountain', 'Doxology'], call: 'Psalm 46:1-3', reading: 'Habakkuk 2', congregational: 'Hebrews 11:1-6', sermon: 'Habakkuk 2:1-4', title: 'Faith that waits', preacher: 'Ptr. Ruth Santiago' },
+  { songs: ['Joy to the World', 'Holy, Holy, Holy', 'Here Is Love', 'Great Is Thy Faithfulness', 'Be Thou My Vision', 'Blessed Assurance', 'Crown Him with Many Crowns'], call: 'Psalm 118:19-24', reading: '1 Peter 2', congregational: 'Ephesians 2:19-22', sermon: '1 Peter 2:4-10', title: 'Living stones', preacher: 'Ptr. Daniel Reyes' },
+  { songs: ['O Come, All Ye Faithful', 'Come Thou Fount', 'Magnificent, Marvelous, Matchless Love', 'Rock of Ages', 'Beautiful Savior', 'Amazing Grace', 'Joy to the World'], call: 'Isaiah 9:2', reading: 'John 1', congregational: 'Psalm 27:1-5', sermon: 'John 1:1-14', title: 'Light in the darkness', preacher: 'Ptr. Ruth Santiago' },
+];
+
+function fillPlan(items: LiturgyItem[], plan: (typeof PLANS)[number], songs: Song[]): LiturgyItem[] {
+  let si = 0;
+  const byTitle = new Map(songs.map((s) => [s.title, s]));
+  return items.map((it) => {
+    if (it.kind === 'song') {
+      const title = plan.songs[si++ % plan.songs.length];
+      return { ...it, detail: title, songId: byTitle.get(title)?.id ?? null };
+    }
+    if (it.kind === 'call_to_worship') return { ...it, detail: plan.call };
+    if (it.title === 'Scripture Reading') return { ...it, detail: plan.reading };
+    if (it.title === 'Congregational Reading of Scripture') return { ...it, detail: plan.congregational };
+    if (it.kind === 'sermon') return { ...it, detail: plan.sermon };
+    return it;
+  });
 }
 
 export function buildSeed(today: string = todayISO()): { [K in keyof CollectionMap]: CollectionMap[K][] } {
@@ -139,8 +148,8 @@ export function buildSeed(today: string = todayISO()): { [K in keyof CollectionM
   const roles: RoleDefinition[] = ROLE_DEFS.map(([id, name, minCount], i) => ({
     id, ministryId: WORSHIP, name, minCount, sortOrder: i, compatibleRoleIds: [], active: true,
   }));
-  // A worship leader may also sing; a guitarist may lead.
-  roles.find((r) => r.id === 'role-leader')!.compatibleRoleIds = ['role-vocals', 'role-guitar'];
+  // The service leader may also lead the music.
+  roles.find((r) => r.id === 'role-leader')!.compatibleRoleIds = ['role-music'];
 
   const volunteers: Volunteer[] = PEOPLE.map(([name, roleIds], i) => ({
     id: `vol-${i + 1}`,
@@ -165,47 +174,27 @@ export function buildSeed(today: string = todayISO()): { [K in keyof CollectionM
       name: 'Short service',
       description: 'For combined or outdoor services',
       items: [
-        { id: uid(), kind: 'call_to_worship', title: 'Call to worship', durationMin: 3 },
-        { id: uid(), kind: 'song', title: '', durationMin: 5 },
-        { id: uid(), kind: 'prayer', title: 'Opening prayer', durationMin: 3 },
-        { id: uid(), kind: 'sermon', title: 'Sermon', durationMin: 25 },
-        { id: uid(), kind: 'song', title: '', durationMin: 5 },
-        { id: uid(), kind: 'benediction', title: 'Benediction', durationMin: 2 },
+        { id: uid(), kind: 'call_to_worship', title: 'Call to Worship', detail: '' },
+        { id: uid(), kind: 'song', title: '', detail: '' },
+        { id: uid(), kind: 'prayer', title: 'Opening Prayer', detail: '' },
+        { id: uid(), kind: 'sermon', title: 'Sermon', detail: '' },
+        { id: uid(), kind: 'song', title: 'Response Song', detail: '' },
       ],
     },
   ];
 
-  // Past four Sundays published, this coming Sunday drafted, the next one in review.
+  // Past four Sundays published, this coming Sunday in review, the next one an empty draft.
   const first = nextSunday(today);
   const dates = [-28, -21, -14, -7, 0, 7].map((n) => addDays(first, n));
-  const sermons = [
-    ['The God who sees', 'Genesis 16:7-14', 'Ptr. Daniel Reyes'],
-    ['Bread for the journey', 'John 6:25-35', 'Ptr. Daniel Reyes'],
-    ['Faith that waits', 'Habakkuk 2:1-4', 'Ptr. Ruth Santiago'],
-    ['Living stones', '1 Peter 2:4-10', 'Ptr. Daniel Reyes'],
-    ['Light in the darkness', 'John 1:1-14', 'Ptr. Ruth Santiago'],
-    ['', '', ''],
-  ];
   const services: Service[] = [];
   const versions: LiturgyVersion[] = [];
   const assignments: Assignment[] = [];
-  const songCycle = [...songs];
-  let songPtr = 0;
 
   dates.forEach((date, i) => {
     const info = sundayInfo(date, DEFAULT_SETTINGS);
     const status: Service['status'] = i < 4 ? 'published' : i === 4 ? 'in_review' : 'draft';
-    let liturgy = applySundayRules(templateItems(), info, DEFAULT_SETTINGS, uid);
-    if (i < 5) {
-      liturgy = liturgy.map((it) => {
-        if (it.kind !== 'song') return it;
-        const s = songCycle[songPtr++ % songCycle.length];
-        return { ...it, songId: s.id, title: s.title };
-      });
-      liturgy = liturgy.map((it) => (it.kind === 'scripture' ? { ...it, scripture: sermons[i][1], leader: '' } : it));
-    } else {
-      liturgy = [];
-    }
+    const plan = PLANS[i];
+    const liturgy = plan ? applySundayRules(fillPlan(templateItems(), plan, songs), info, DEFAULT_SETTINGS, uid) : [];
     const svc: Service = {
       id: `svc-${date}`,
       ministryId: WORSHIP,
@@ -213,8 +202,8 @@ export function buildSeed(today: string = todayISO()): { [K in keyof CollectionM
       startTime: '09:00',
       endTime: '11:00',
       status,
-      theme: i < 5 ? sermons[i][0] : '',
-      sermon: { title: sermons[i][0], scripture: sermons[i][1], preacher: sermons[i][2], series: i < 5 ? 'Advent of light' : '', notes: '' },
+      theme: plan?.title ?? '',
+      sermon: { title: plan?.title ?? '', scripture: plan?.sermon ?? '', preacher: plan?.preacher ?? '', series: '', notes: '' },
       liturgy,
       creedOverride: null,
       notes: '',
@@ -235,9 +224,9 @@ export function buildSeed(today: string = todayISO()): { [K in keyof CollectionM
   services.slice(0, 5).forEach((svc, si) => {
     const used = new Set<string>();
     for (const r of roles) {
+      // Leave the Scripture Reader open on the Sunday in review to show a gap.
+      const need = si === 4 && r.id === 'role-reader' ? 0 : r.minCount;
       const pool = volunteers.filter((v) => v.roleIds.includes(r.id));
-      // On the in-review Sunday leave Slides and one usher open to show gaps.
-      const need = si === 4 && (r.id === 'role-slides' || r.id === 'role-usher') ? r.minCount - 1 : r.minCount;
       for (let k = 0; k < need; k++) {
         let c = counters.get(r.id) ?? 0;
         let pick: Volunteer | undefined;
@@ -262,8 +251,8 @@ export function buildSeed(today: string = todayISO()): { [K in keyof CollectionM
   }
 
   const availability: Availability[] = [
-    { id: uid(), volunteerId: 'vol-5', date: dates[5], note: 'Out of town' },
-    { id: uid(), volunteerId: 'vol-10', date: dates[5], note: 'Family event' },
+    { id: uid(), volunteerId: 'vol-9', date: dates[5], note: 'Out of town' },
+    { id: uid(), volunteerId: 'vol-4', date: dates[5], note: 'Family event' },
     { id: uid(), volunteerId: 'vol-1', date: addDays(dates[5], 7), note: 'Travelling' },
   ];
 
