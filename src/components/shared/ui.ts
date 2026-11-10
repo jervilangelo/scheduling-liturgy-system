@@ -1,7 +1,5 @@
 import { h } from '../../utils/dom';
 import { icon, type IconName } from './icons';
-import type { ServiceStatus } from '../../types/domain';
-import { STATUS_LABEL } from '../../modules/publishing';
 
 /* ---------- Buttons ---------- */
 
@@ -31,14 +29,6 @@ export async function withBusy(btn: HTMLButtonElement, fn: () => Promise<void>):
   btn.disabled = true;
   btn.setAttribute('aria-busy', 'true');
   try { await fn(); } finally { btn.disabled = false; btn.removeAttribute('aria-busy'); }
-}
-
-/* ---------- Status ---------- */
-
-export function statusPill(status: ServiceStatus | 'none'): HTMLElement {
-  if (status === 'none') return h('span', { class: 'pill pill-neutral' }, 'Not started');
-  const cls: Record<ServiceStatus, string> = { draft: 'pill-neutral', in_review: 'pill-warning', approved: 'pill-info', published: 'pill-positive' };
-  return h('span', { class: `pill ${cls[status]}` }, STATUS_LABEL[status]);
 }
 
 export function pill(text: string, tone: 'neutral' | 'warning' | 'negative' | 'positive' | 'info' = 'neutral'): HTMLElement {
@@ -191,19 +181,4 @@ export function pageHeader(title: string, subtitle: string | null, actions: Node
     h('div', { class: 'page-head-text' }, h('h1', { class: 'page-title' }, title), subtitle ? h('p', { class: 'page-sub' }, subtitle) : null),
     actions.length ? h('div', { class: 'page-actions' }, ...actions) : null,
   );
-}
-
-export function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('');
-}
-
-/** Stable pale identity tint per person (not data colour). */
-export function personTint(id: string): string {
-  let hsh = 0;
-  for (const c of id) hsh = (hsh * 31 + c.charCodeAt(0)) >>> 0;
-  return `hsl(${(hsh * 137) % 360} 45% 92%)`;
-}
-
-export function avatar(name: string, id: string): HTMLElement {
-  return h('span', { class: 'avatar', style: `background:${personTint(id)}`, 'aria-hidden': 'true' }, initials(name));
 }

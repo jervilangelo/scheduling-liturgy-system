@@ -23,16 +23,19 @@ Service Leader: Angelo
 Scripture Reader:
 Music:`;
 
-const song = (id: string, title: string): Song => ({ id, title, artist: '', themes: [], songKey: '', lastSung: null, sheetRow: null, notes: '' });
-const library = [song('s1', 'Here Is Love'), song('s2', 'Come Thou Fount'), song('s3', 'The Lord Is My Salvation')];
+const song = (id: string, title: string): Song => ({ id, title, artist: '', themes: [], lastSung: null, lyricsLink: '', chordsLink: '', sheetRow: null });
+const library = [song('s1', 'Here Is Love'), song('s2', 'Come Thou Fount'), song('s3', 'The Lord is my Salvation')];
 let n = 0;
 const id = () => `i${++n}`;
 
 describe('church text format', () => {
-  const { items, skipped } = parseLiturgyText(SAMPLE, library, ['Service Leader', 'Scripture Reader', 'Music'], id);
+  const { items: all, skipped } = parseLiturgyText(SAMPLE, library, ['Service Leader', 'Scripture Reader', 'Music'], id);
+  // Dash lines are grouped under hidden "Congregational Singing" headers that are not printed.
+  const items = all.filter((i) => !i.hideInText);
 
   it('reads every element, skipping the date and team lines', () => {
     expect(items).toHaveLength(14);
+    expect(all.filter((i) => i.kind === 'singing')).toHaveLength(4);
     expect(skipped).toEqual(['Service Leader: Angelo', 'Scripture Reader:', 'Music:']);
   });
 
@@ -59,8 +62,8 @@ describe('church text format', () => {
 
   it('writes the same text back out', () => {
     const songs = new Map(library.map((s) => [s.id, s]));
-    const text = liturgyToText('2026-11-08', items, songs, [
-      { role: 'Service Leader', names: ['Angelo'] }, { role: 'Scripture Reader', names: [] }, { role: 'Music', names: [] },
+    const text = liturgyToText('2026-11-08', all, songs, [
+      { role: 'Service Leader', names: 'Angelo' }, { role: 'Scripture Reader', names: '' }, { role: 'Music', names: '' },
     ]);
     expect(text).toBe(SAMPLE.replace(/-\t/g, '- ').replace('Scripture Reader: ', 'Scripture Reader:'));
   });

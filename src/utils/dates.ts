@@ -11,12 +11,19 @@ export function toISO(d: Date): ISODate {
   return d.toISOString().slice(0, 10);
 }
 
+/** The church is in Manila: "today" and all times use Philippine time, whatever the device clock says. */
+export const CHURCH_TIME_ZONE = 'Asia/Manila';
+
+function manilaParts(now: Date): Record<string, string> {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CHURCH_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now);
+  return Object.fromEntries(parts.map((p) => [p.type, p.value]));
+}
+
 export function todayISO(now: Date = new Date()): ISODate {
-  // Local calendar day, not UTC day.
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  const p = manilaParts(now);
+  return `${p.year}-${p.month}-${p.day}`;
 }
 
 export function addDays(d: ISODate, n: number): ISODate {
@@ -104,7 +111,8 @@ export function formatShort(d: ISODate): string {
 export function formatDateTime(iso: string): string {
   const x = new Date(iso);
   if (Number.isNaN(x.getTime())) return '—';
-  return `${x.getDate()} ${MONTHS_SHORT[x.getMonth()]} ${x.getFullYear()}, ${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`;
+  const p = manilaParts(x);
+  return `${Number(p.day)} ${MONTHS_SHORT[Number(p.month) - 1]} ${p.year}, ${p.hour}:${p.minute}`;
 }
 
 export function isValidISODate(s: string): boolean {

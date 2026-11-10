@@ -11,3 +11,7 @@ blob-report/
 .DS_Store
 supabase/.temp/
 supabase/.branches/
+
+# Church data files with member names: never commit (import them in the app instead)
+*.xlsx
+!tests/fixtures/*.xlsx

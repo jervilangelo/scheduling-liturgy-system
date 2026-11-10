@@ -27,7 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - name: End-to-end tests (production build, demo mode)
+      - name: End-to-end tests (production build)
         run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -47,18 +47,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Build all HTML entry points
-        env:
-          # Public values only. Set them as repository variables (Settings → Secrets and variables → Actions → Variables).
-          # Leave unset to deploy in demo mode.
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
-      - name: Verify every page was built
-        run: |
-          for p in index calendar liturgy scheduling volunteers songs history published settings login; do
-            test -f "dist/$p.html" || { echo "missing dist/$p.html"; exit 1; }
-          done
+      - run: npm run build
+      - name: Verify the page was built
+        run: test -f dist/index.html
       - name: Check for privileged secrets in the bundle
         run: npm run check:secrets
       - uses: actions/configure-pages@v5
